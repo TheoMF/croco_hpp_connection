@@ -3,15 +3,15 @@ import rospy
 import numpy as np
 from copy import deepcopy
 import time
+import os
 from threading import Lock
 from std_msgs.msg import Duration, Header
-import pinocchio as pin
 import example_robot_data
 from linear_feedback_controller_msgs.msg import Control, Sensor
 
 from agimus_controller.utils.ros_np_multiarray import to_multiarray_f64
 from agimus_controller.utils.wrapper_panda import PandaWrapper
-from agimus_controller.utils import get_robot_model, get_collision_model
+from agimus_controller.utils.build_models import get_robot_model, get_collision_model
 from agimus_controller.hpp_interface import HppInterface
 from agimus_controller.mpc import MPC
 from agimus_controller.ocps.ocp_croco_hpp import OCPCrocoHPP
@@ -24,9 +24,14 @@ class HppAgimusController:
         self.horizon_size = 100
 
         robot = example_robot_data.load("panda")
-        self.rmodel = get_robot_model(robot)
+
+        current_dir_path = os.path.dirname(os.path.abspath(__file__))
+        urdf_path = os.path.join(current_dir_path, "../urdf/robot.urdf")
+        srdf_path = os.path.join(current_dir_path, "../srdf/demo.srdf")
+        yaml_path = os.path.join(current_dir_path, "../config/param.yaml")
+        self.rmodel = get_robot_model(robot, urdf_path, srdf_path)
+        self.cmodel = get_collision_model(self.rmodel, urdf_path, yaml_path)
         self.pandawrapper = PandaWrapper(auto_col=True)
-        _, self.cmodel, self.vmodel = self.pandawrapper.create_robot()
         self.ee_frame_name = self.pandawrapper.get_ee_frame_name()
         self.hpp_interface = HppInterface()
         self.ocp = OCPCrocoHPP(self.rmodel, self.cmodel, use_constraints=False)

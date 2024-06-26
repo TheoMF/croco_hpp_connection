@@ -1,15 +1,24 @@
 import time
+import os
+import example_robot_data
 from agimus_controller.hpp_interface import HppInterface
 from agimus_controller.mpc import MPC
 from agimus_controller.utils.plots import MPCPlots
+from agimus_controller.utils.build_models import get_robot_model, get_collision_model
 
 from agimus_controller.utils.wrapper_panda import PandaWrapper
 from agimus_controller.ocps.ocp_croco_hpp import OCPCrocoHPP
 
 if __name__ == "__main__":
     pandawrapper = PandaWrapper(auto_col=True)
+    current_dir_path = os.path.dirname(os.path.abspath(__file__))
+    urdf_path = os.path.join(current_dir_path, "../../urdf/robot.urdf")
+    srdf_path = os.path.join(current_dir_path, "../../srdf/demo.srdf")
+    yaml_path = os.path.join(current_dir_path, "../../config/param.yaml")
+    robot = example_robot_data.load("panda")
+    rmodel = get_robot_model(robot, urdf_path, srdf_path)
+    cmodel = get_collision_model(rmodel, urdf_path, yaml_path)
     rmodel, cmodel, vmodel = pandawrapper.create_robot()
-
     ee_frame_name = pandawrapper.get_ee_frame_name()
     q_init = [
         0.13082259440720514,
@@ -45,4 +54,3 @@ if __name__ == "__main__":
         ee_frame_name=ee_frame_name,
         v=hpp_interface.get_viewer(),
     )
-    mpc_plots.plot_traj()

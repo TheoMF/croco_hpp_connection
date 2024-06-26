@@ -19,24 +19,19 @@ class MPCPlots:
         rmodel,
         DT,
         ee_frame_name: str,
-        vf=None,
-        v=None,
-        ball_init_pose=None,
+        viewer=None,
     ):
-        self.ball_init_pose = ball_init_pose
-        if v is not None:
-            self.v = v
-        elif vf is not None:
-            self.v = vf.createViewer()
+        if viewer is not None:
+            self.viewer = viewer
         self.DT = DT
-        self._rmodel = rmodel
-        self._rdata = self._rmodel.createData()
+        self.rmodel = rmodel
+        self._rdata = self.rmodel.createData()
 
         self._last_joint_name, self._last_joint_id, self._last_joint_frame_id = (
-            get_last_joint(self._rmodel)
+            get_last_joint(self.rmodel)
         )
 
-        self.nq = self._rmodel.nq
+        self.nq = self.rmodel.nq
         self.croco_xs = croco_xs
         self.croco_us = croco_us
         self.whole_x_plan = whole_x_plan
@@ -44,7 +39,7 @@ class MPCPlots:
         self.path_length = (whole_x_plan.shape[0] - 1) * self.DT
 
         self._ee_frame_name = ee_frame_name
-        self._id_ee_frame_name = self._rmodel.getFrameId(self._ee_frame_name)
+        self._id_ee_frame_name = self.rmodel.getFrameId(self._ee_frame_name)
 
     def update_croco_predictions(self, croco_xs, croco_us):
         self.croco_xs = croco_xs
@@ -138,18 +133,21 @@ class MPCPlots:
 
     def display_path(self):
         """Display in Gepetto Viewer the trajectory found with crocoddyl."""
+        if self.rmodel.existJointName("panda_joint7") or self.rmodel.existJointName(
+            "panda2_joint7"
+        ):
+            environnement_pose = [0, 0]  # value of gripper joints
+        elif self.rmodel.existJointName("wrist_3_joint"):
+            environnement_pose = [-0.2, 0, 0.02, 0, 0, 0, 1]  # pose of the ball
         for x in self.croco_xs:
-            if self.ball_init_pose is not None:
-                self.v(list(x)[: self.nq] + self.ball_init_pose)
-            else:
-                self.v(list(x)[: self.nq] + [0, 0])
+            self.viewer(list(x)[: self.nq] + environnement_pose)
             time.sleep(self.DT)
 
     def print_final_placement(self):
         """Print final gripper position for both hpp and crocoddyl trajectories."""
         q_final_hpp = self.whole_x_plan[-1][: self.nq]
         hpp_placement = get_ee_pose_from_configuration(
-            self._rmodel, self._rdata, self._last_joint_frame_id, q_final_hpp
+            self.rmodel, self._rdata, self._last_joint_frame_id, q_final_hpp
         )
         print("Last node placement ")
         print(
@@ -160,7 +158,7 @@ class MPCPlots:
         )
         q_final_croco = self.croco_xs[-1][: self.nq]
         croco_placement = get_ee_pose_from_configuration(
-            self._rmodel, self._rdata, self._last_joint_frame_id, q_final_croco
+            self.rmodel, self._rdata, self._last_joint_frame_id, q_final_croco
         )
         print(
             "croco rot ",
@@ -189,15 +187,15 @@ class MPCPlots:
         for idx in range(self.croco_xs.shape[0]):
             q = self.croco_xs[idx, : self.nq]
             pose = get_ee_pose_from_configuration(
-                self._rmodel, self._rdata, self._last_joint_frame_id, q
+                self.rmodel, self._rdata, self._last_joint_frame_id, q
             ).translation
             for idx in range(3):
                 pose_croco[idx].append(pose[idx])
         for idx in range(self.whole_x_plan.shape[0]):
             q = self.whole_x_plan[idx, : self.nq]
-            pin.framesForwardKinematics(self._rmodel, self._rdata, q)
+            pin.framesForwardKinematics(self.rmodel, self._rdata, q)
             pose = get_ee_pose_from_configuration(
-                self._rmodel, self._rdata, self._last_joint_frame_id, q
+                self.rmodel, self._rdata, self._last_joint_frame_id, q
             ).translation
             for idx in range(3):
                 pose_hpp[idx].append(pose[idx])
@@ -211,7 +209,7 @@ class MPCPlots:
         for idx in range(xs.shape[0]):
             q_idx = xs[idx, : self.nq]
             pose = get_ee_pose_from_configuration(
-                self._rmodel, self._rdata, self._last_joint_frame_id, q_idx
+                self.rmodel, self._rdata, self._last_joint_frame_id, q_idx
             ).translation
             poses[idx, :] = pose
         t_xs = np.linspace(0, (len(xs) - 1), int(1 / dt))

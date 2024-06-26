@@ -60,13 +60,6 @@ if(NOT INSTALL_ROS_INTERFACE_ONLY)
     python_install_on_site(${PROJECT_NAME}/ocps ${file})
   endforeach()
 
-  # Install the theos_work files.
-  set(project_theos_work_python_source_files ocp_analyzer.py
-                                             ocp_pick_and_place2_v1.py run.py)
-  foreach(file ${project_theos_work_python_source_files})
-    python_install_on_site(${PROJECT_NAME}/theos_work ${file})
-  endforeach()
-
   # Install the utils files.
   set(project_python_utils_files pin_utils.py plots.py ros_np_multiarray.py
                                  scenes.py wrapper_meshcat.py wrapper_panda.py)

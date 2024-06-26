@@ -86,10 +86,10 @@ class AgimusControllerNode:
             self.rate.sleep()
         return wait_for_input
 
-    def wait_twice_control_horizon_from_plan(self):
-        for _ in range(self.params.horizon_size * 2):
-            tp = self.hpp_subscriber.get_trajectory_point()
-            # self.buffer.append
+    # def wait_twice_control_horizon_from_plan(self):
+    # for _ in range(self.params.horizon_size * 2):
+    #   tp = self.hpp_subscriber.get_trajectory_point()
+    # self.buffer.append
 
     def first_solve(self):
         sensor_msg = self.get_sensor_msg()

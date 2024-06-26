@@ -305,7 +305,7 @@ try:
         def stop_recording(self):
             pybullet.stopStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, self.file_name)
 
-except:
+except NameError:
     pass
 
 if __name__ == "__main__":

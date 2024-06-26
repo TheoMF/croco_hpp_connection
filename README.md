@@ -4,7 +4,7 @@
 
 In order to build this package one need various complexe codes:
 
-- Humanoid Path Planneur
+- Humanoid Path Planner
 - Agimus software
 - Croccodyl
 
@@ -19,15 +19,17 @@ https://gitlab.laas.fr/agimus-project/agimus_dev_container
 
 ### Pick an place scenario using HPP
 
-We use the Humnaoid Path Planner in order to get a path and then build a whole-body model predictive controller that tracks the planned trajectory.
+We use the Humanoid Path Planner in order to get a path and then build a whole-body model predictive controller that tracks the planned trajectory.
 
-Once the code is built one can run these in several terminals inside the docker:
-- `roscore`
+Once the code is built, you can run the mpc either with or without ros, without ros, one can run these in several terminals inside the docker :
 - `hppcorbaserver`
 - `gepetto-gui`
-- run the script:
-    - with python3: `python3 -i -m agimus_controller.main.main_hpp_mpc -N=1`
-    - with ipython3: `ipython3 -i -m agimus_controller.main.main_hpp_mpc -- -N=1`
+- `roscore`
+then you can you choose one of the mains :
+    - ur3 script : `python3 -m agimus_controller.main.main_hpp_mpc -N=1`
+    - panda script : `python3 -m agimus_controller.main.main_hpp_panda_mpc -N=1`
+    - panda script with buffer management :
+    `python3 -m agimus_controller.main.main_hpp_panda_mpc -N=1`
 
 For one to simply run the node individually.
 
@@ -44,7 +46,7 @@ For a more complete setup see the
 https://github.com/agimus-project/agimus_pick_and_place
 package.
 
-Start gazebo:
+To run the simulation with ros one can launch:
 ```bash
 hppcorbaserver
 gepetto-gui

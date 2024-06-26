@@ -13,7 +13,7 @@ from agimus_controller.utils.pin_utils import (
 
 class OCPCrocoHPP:
     def __init__(
-        self, rmodel: pin.Model, cmodel: pin.GeometryModel, use_constraints=False
+        self, rmodel: pin.Model, cmodel: pin.GeometryModel = None, use_constraints=False
     ) -> None:
         """Class to define the OCP linked witha HPP generated trajectory.
 

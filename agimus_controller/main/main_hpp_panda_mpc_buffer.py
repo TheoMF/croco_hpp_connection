@@ -1,4 +1,3 @@
-from math import pi
 import numpy as np
 from agimus_controller.hpp_interface import HppInterface
 from agimus_controller.mpc import MPC
@@ -10,22 +9,23 @@ from agimus_controller.trajectory_buffer import TrajectoryBuffer
 from agimus_controller.trajectory_point import TrajectoryPoint, PointAttribute
 
 if __name__ == "__main__":
-    nq = 7
-    nv = 7
     pandawrapper = PandaWrapper(auto_col=True)
     rmodel, cmodel, vmodel = pandawrapper.create_robot()
     ee_frame_name = pandawrapper.get_ee_frame_name()
     hpp_interface = HppInterface()
-    ps = hpp_interface.get_panda_planner()
-    q_init = [pi / 6, -pi / 2, pi / 2, 0, 0, 0, -0.2, 0, 0.02, 0, 0, 0, 1]
-    whole_x_plan, whole_a_plan, whole_traj_T = hpp_interface.get_hpp_plan(
+    q_init, q_goal = hpp_interface.get_panda_q_init_q_goal()
+    hpp_interface.set_panda_planning(q_init, q_goal)
+    ps, viewer = hpp_interface.get_problem_solver_and_viewer()
+    whole_x_plan, whole_a_plan, whole_traj_T = hpp_interface.get_hpp_x_a_planning(
         1e-2, 7, ps.client.problem.getPath(ps.numberPaths() - 1)
     )
     ocp = OCPCrocoHPP(rmodel, cmodel, use_constraints=False)
     mpc = MPC(ocp, whole_x_plan, whole_a_plan, rmodel, cmodel)
     mpc.ocp.set_weights(10**4, 1, 10**-3, 0)
 
-    point_attributes = [PointAttribute.Q]  # PointAttribute.V, PointAttribute.A
+    nq = rmodel.nq
+    nv = rmodel.nv
+    point_attributes = [PointAttribute.Q, PointAttribute.V, PointAttribute.A]
     traj_buffer = TrajectoryBuffer()
     first_point = TrajectoryPoint(nq=nq, nv=nv)
     first_point.q = whole_x_plan[0, :nq]
@@ -72,14 +72,13 @@ if __name__ == "__main__":
 
     u_plan = mpc.ocp.get_u_plan(whole_x_plan, whole_a_plan)
     mpc_plots = MPCPlots(
-        mpc_xs,
-        mpc_us,
-        whole_x_plan,
-        u_plan,
-        rmodel,
-        mpc.ocp.DT,
+        croco_xs=mpc_xs,
+        croco_us=mpc_us,
+        whole_x_plan=whole_x_plan,
+        whole_u_plan=u_plan,
+        rmodel=rmodel,
+        DT=mpc.ocp.DT,
         ee_frame_name=ee_frame_name,
-        v=hpp_interface.planner._v,
-        ball_init_pose=[-0.2, 0, 0.02, 0, 0, 0, 1],
+        viewer=viewer,
     )
     mpc_plots.plot_traj()

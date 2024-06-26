@@ -14,12 +14,12 @@ class PointAttribute(Enum):
 
 class TrajectoryPoint:
     def __init__(self, time=0, nq=0, nv=0):
-        self.q = np.zeros(nq)
-        self.v = np.zeros(nv)
-        self.a = np.zeros(nv)
-        self.tau = np.zeros(nv)
-        self.com_pos = np.zeros(3)
-        self.com_vel = np.zeros(3)
+        self.q = np.zeros(nq) * np.nan
+        self.v = np.zeros(nv) * np.nan
+        self.a = np.zeros(nv) * np.nan
+        self.tau = np.zeros(nv) * np.nan
+        self.com_pos = np.zeros(3) * np.nan
+        self.com_vel = np.zeros(3) * np.nan
         self.op_pos = {}
         self.op_vel = {}
         self.nq = nq
@@ -38,10 +38,10 @@ class TrajectoryPoint:
         return attribute_validation_dict
 
     def resize(self, nq, nv):
-        self.q = np.zeros(nq)
-        self.v = np.zeros(nv)
-        self.a = np.zeros(nv)
-        self.tau = np.zeros(nv)
+        self.q = np.zeros(nq) * np.nan
+        self.v = np.zeros(nv) * np.nan
+        self.a = np.zeros(nv) * np.nan
+        self.tau = np.zeros(nv) * np.nan
         self.nq = nq
         self.nv = nv
 
@@ -52,19 +52,19 @@ class TrajectoryPoint:
         return self.attribute_validation_dict[attribute]()
 
     def q_is_valid(self):
-        return not np.array_equal(self.q, np.zeros(self.nq))
+        return not np.array_equal(self.q, np.zeros(self.nq) * np.nan)
 
     def v_is_valid(self):
-        return not np.array_equal(self.v, np.zeros(self.nv))
+        return not np.array_equal(self.v, np.zeros(self.nv) * np.nan)
 
     def a_is_valid(self):
-        return not np.array_equal(self.a, np.zeros(self.nv))
+        return not np.array_equal(self.a, np.zeros(self.nv) * np.nan)
 
     def tau_is_valid(self):
-        return not np.array_equal(self.tau, np.zeros(self.nv))
+        return not np.array_equal(self.tau, np.zeros(self.nv) * np.nan)
 
     def com_pos_is_valid(self):
-        return not np.array_equal(self.com_pos, np.zeros(3))
+        return not np.array_equal(self.com_pos, np.zeros(3) * np.nan)
 
     def com_vel_is_valid(self):
-        return not np.array_equal(self.com_vel, np.zeros(3))
+        return not np.array_equal(self.com_vel, np.zeros(3) * np.nan)

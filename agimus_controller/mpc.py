@@ -1,6 +1,5 @@
 from __future__ import annotations
 import numpy as np
-import time
 
 
 class MPC:
@@ -76,10 +75,7 @@ class MPC:
         for idx in range(1, self.whole_traj_T - 1):
             x_plan = self.update_planning(x_plan, self.whole_x_plan[next_node_idx, :])
             a_plan = self.update_planning(a_plan, self.whole_a_plan[next_node_idx, :])
-            start = time.time()
             x, u = self.mpc_step(x, x_plan[-1], a_plan[-1])
-            end = time.time()
-            # print("step time ", end - start)
             if next_node_idx < self.whole_x_plan.shape[0] - 1:
                 next_node_idx += 1
             mpc_xs[idx + 1, :] = x
@@ -98,7 +94,7 @@ class MPC:
         self.croco_xs = mpc_xs
         self.croco_us = mpc_us
         if save_predictions:
-            print("saving")
+            print("saving predictions in .npy files")
             np.save("mpc_xs_sim.npy", mpc_pred_xs, allow_pickle=True)
             np.save("mpc_us_sim.npy", mpc_pred_us, allow_pickle=True)
             np.save("state_refs_sim.npy", self.state_refs)

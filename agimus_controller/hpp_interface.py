@@ -46,11 +46,8 @@ class Ground(object):
 
 
 class HppInterface:
-    def __init__(
-        self, q_init=[pi / 6, -pi / 2, pi / 2, 0, 0, 0, -0.2, 0, 0.02, 0, 0, 0, 1]
-    ):
+    def __init__(self):
         self.trajectory = []
-        # self.set_ur3_problem_solver(q_init)
 
     def set_ur3_problem_solver(self, q_init):
         parser = ArgumentParser()
@@ -247,9 +244,9 @@ class HppInterface:
                 print(f"Average time per success: {totalTime.total_seconds()/success}")
                 print(f"Average number nodes per success: {totalNumberNodes/success}")
         self.ps = ps
-        self.vf = vf
+        self.viewer = vf.createViewer()
 
-    def get_panda_planner(self, q_init, q_goal):
+    def set_panda_planning(self, q_init, q_goal):
         self.q_init = q_init
         self.q_goal = q_goal
 
@@ -266,12 +263,13 @@ class HppInterface:
         self.planner = Planner(self.rmodel, self.cmodel, self.scene, self.T)
         _, _, self.X = self.planner.solve_and_optimize(self.q_init, self.q_goal)
         self.planner._ps.optimizePath(self.planner._ps.numberPaths() - 1)
-        return self.planner._ps
+        self.ps = self.planner._ps
+        self.viewer = self.planner._v
 
-    def get_viewer(self):
-        return self.planner._v
+    def get_problem_solver_and_viewer(self):
+        return self.ps, self.viewer
 
-    def get_hpp_plan(self, DT, nq, hpp_path):
+    def get_hpp_x_a_planning(self, DT, nq, hpp_path):
         path = hpp_path.pathAtRank(0)
         T = int(np.round(path.length() / DT))
         x_plan, a_plan, subpath = self.get_xplan_aplan(T, path, nq)
@@ -328,3 +326,17 @@ class HppInterface:
 
     def get_trajectory_point(self, index):
         return self.trajectory[index]
+
+    def get_panda_q_init_q_goal(self):
+        q_init = [
+            0.13082259440720514,
+            -1.150735366655217,
+            -0.6975751204881672,
+            -2.835918304210108,
+            -0.02303564961006244,
+            2.51523530644841,
+            0.33466451573454664,
+        ]
+
+        q_goal = [1.9542, -1.1679, -2.0741, -1.8046, 0.0149, 2.1971, 2.0056]
+        return q_init, q_goal

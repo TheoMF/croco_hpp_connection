@@ -9,22 +9,12 @@ from agimus_controller.ocps.ocp_croco_hpp import OCPCrocoHPP
 if __name__ == "__main__":
     pandawrapper = PandaWrapper(auto_col=True)
     rmodel, cmodel, vmodel = pandawrapper.create_robot()
-
     ee_frame_name = pandawrapper.get_ee_frame_name()
-    q_init = [
-        0.13082259440720514,
-        -1.150735366655217,
-        -0.6975751204881672,
-        -2.835918304210108,
-        -0.02303564961006244,
-        2.51523530644841,
-        0.33466451573454664,
-    ]
-    q_goal = [1.9542, -1.1679, -2.0741, -1.8046, 0.0149, 2.1971, 2.0056]
-
     hpp_interface = HppInterface()
-    ps = hpp_interface.get_panda_planner(q_init, q_goal)
-    x_plan, a_plan, whole_traj_T = hpp_interface.get_hpp_plan(
+    q_init, q_goal = hpp_interface.get_panda_q_init_q_goal()
+    hpp_interface.set_panda_planning(q_init, q_goal)
+    ps, viewer = hpp_interface.get_problem_solver_and_viewer()
+    x_plan, a_plan, whole_traj_T = hpp_interface.get_hpp_x_a_planning(
         1e-2, 7, ps.client.problem.getPath(ps.numberPaths() - 1)
     )
     ocp = OCPCrocoHPP(rmodel, cmodel, use_constraints=False)
@@ -32,17 +22,17 @@ if __name__ == "__main__":
     mpc = MPC(ocp, x_plan, a_plan, rmodel, cmodel)
     start = time.time()
     mpc.ocp.set_weights(10**4, 1, 10**-3, 0)
-    mpc.simulate_mpc(100, save_predictions=True)
+    mpc.simulate_mpc(T=100, save_predictions=False)
     end = time.time()
     u_plan = mpc.ocp.get_u_plan(x_plan, a_plan)
     mpc_plots = MPCPlots(
-        mpc.croco_xs,
-        mpc.croco_us,
-        x_plan,
-        u_plan,
-        rmodel,
-        mpc.ocp.DT,
+        croco_xs=mpc.croco_xs,
+        croco_us=mpc.croco_us,
+        whole_x_plan=x_plan,
+        whole_u_plan=u_plan,
+        rmodel=rmodel,
+        DT=mpc.ocp.DT,
         ee_frame_name=ee_frame_name,
-        v=hpp_interface.get_viewer(),
+        viewer=viewer,
     )
     mpc_plots.plot_traj()

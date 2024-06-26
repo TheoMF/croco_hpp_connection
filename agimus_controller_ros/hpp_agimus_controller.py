@@ -11,29 +11,10 @@ from linear_feedback_controller_msgs.msg import Control, Sensor
 
 from agimus_controller.utils.ros_np_multiarray import to_multiarray_f64
 from agimus_controller.utils.wrapper_panda import PandaWrapper
+from agimus_controller.utils import get_robot_model, get_collision_model
 from agimus_controller.hpp_interface import HppInterface
 from agimus_controller.mpc import MPC
 from agimus_controller.ocps.ocp_croco_hpp import OCPCrocoHPP
-
-
-def get_robot_model(robot):
-    locked_joints = [
-        robot.model.getJointId("panda_finger_joint1"),
-        robot.model.getJointId("panda_finger_joint2"),
-    ]
-
-    urdf_path = (
-        "/home/gepetto/ros_ws/src/agimus_controller/agimus_controller_ros/robot.urdf"
-    )
-    srdf_path = (
-        "/home/gepetto/ros_ws/src/agimus_controller/agimus_controller_ros/demo.srdf"
-    )
-
-    model = pin.Model()
-    pin.buildModelFromUrdf(urdf_path, model)
-    pin.loadReferenceConfigurations(model, srdf_path, False)
-    q0 = model.referenceConfigurations["default"]
-    return pin.buildReducedModel(model, locked_joints, q0)
 
 
 class HppAgimusController:

@@ -48,7 +48,7 @@ class HppAgimusController:
         _, self.cmodel, self.vmodel = self.pandawrapper.create_robot()
         self.ee_frame_name = self.pandawrapper.get_ee_frame_name()
         self.hpp_interface = HppInterface()
-        self.ocp = OCPCrocoHPP(self.rmodel, self.cmodel, use_constraints=False)
+        self.ocp = OCPCrocoHPP(self.rmodel, self.cmodel, use_constraints=True)
         self.ocp.set_weights(10**4, 1, 10**-3, 0)
 
         self.rate = rospy.Rate(100, reset=True)
@@ -65,10 +65,10 @@ class HppAgimusController:
             self.sensor_callback,
         )
         self.control_publisher = rospy.Publisher(
-            "motion_server_control", Control, queue_size=1
+            "motion_server_control", Control, queue_size=1, tcp_nodelay=True
         )
         self.ocp_solve_time_pub = rospy.Publisher(
-            "ocp_solve_time", Duration, queue_size=1
+            "ocp_solve_time", Duration, queue_size=1, tcp_nodelay=True
         )
         self.start_time = 0.0
         self.first_solve = False
@@ -135,12 +135,7 @@ class HppAgimusController:
         self.control_refs[0, :] = u_ref
 
         _, u, k = self.mpc.get_mpc_output()
-        self.control_msg.header = Header()
-        self.control_msg.header.stamp = rospy.Time.now()
-        self.control_msg.feedback_gain = to_multiarray_f64(k)
-        self.control_msg.feedforward = to_multiarray_f64(u)
-        self.control_msg.initial_state = sensor_msg
-        self.control_publisher.publish(self.control_msg)
+        return sensor_msg, u, k
 
     def solve_and_send(self):
         sensor_msg = self.get_sensor_msg()
@@ -175,6 +170,14 @@ class HppAgimusController:
             np.save("control_refs.npy", self.control_refs)
         _, u, k = self.mpc.get_mpc_output()
 
+        self.send(sensor_msg, u, k)
+
+    def get_sensor_msg(self):
+        with self.mutex:
+            sensor_msg = deepcopy(self.sensor_msg)
+        return sensor_msg
+
+    def send(self, sensor_msg, u, k):
         self.control_msg.header = Header()
         self.control_msg.header.stamp = rospy.Time.now()
         self.control_msg.feedback_gain = to_multiarray_f64(k)
@@ -182,21 +185,18 @@ class HppAgimusController:
         self.control_msg.initial_state = sensor_msg
         self.control_publisher.publish(self.control_msg)
 
-    def get_sensor_msg(self):
-        with self.mutex:
-            sensor_msg = deepcopy(self.sensor_msg)
-        return sensor_msg
-
     def run(self):
         self.wait_first_sensor_msg()
-        self.plan_and_first_solve()
+        sensor_msg, u, k = self.plan_and_first_solve()
+        input("Press enter to continue ...")
+        self.send(sensor_msg, u, k)
         self.rate.sleep()
         while not rospy.is_shutdown():
             start_compute_time = rospy.Time.now()
             self.solve_and_send()
+            self.rate.sleep()
             self.ocp_solve_time.data = rospy.Time.now() - start_compute_time
             self.ocp_solve_time_pub.publish(self.ocp_solve_time)
-            self.rate.sleep()
 
 
 def crocco_motion_server_node():
